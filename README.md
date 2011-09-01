@@ -16,7 +16,7 @@ The sparql.js file is specifically meant to be a standalone utility. To use, cre
 
 The following methods are available on the connection:
 
-** query(text, callback, [graphs], [namedgraphs], [errfn], [completedfn])**
+**query(text, callback, [graphs], [namedgraphs], [errfn], [completedfn])**
 
   Performs a SPARQL query using the connection. The callback function is used when data is successfully returned. The callback takes one parameter, which is the XML DOM of the result.
   *text* - The SPARQL text to be run.
@@ -27,7 +27,7 @@ The following methods are available on the connection:
   *complete* - A function that is called at the conclusion of the query, regardless of the outcome. No parameters are provided to this function. Optional.
 
 
-** queryJSON(text, callback, [graphs], [namedgraphs], [errfn], [completedfn])**
+**queryJSON(text, callback, [graphs], [namedgraphs], [errfn], [completedfn])**
 
   Identical method to query, however the callback function receives a JavaScript object that conforms to the SPARQL JSON Result Format.
   *text* - The SPARQL text to be run.
@@ -38,7 +38,7 @@ The following methods are available on the connection:
   *complete* - A function that is called at the conclusion of the query, regardless of the outcome. No parameters are provided to this function. Optional.
 
 
-** action(text, callback, errfn)**
+**action(text, callback, errfn)**
 
   Performs a SPARQL Update action using the connection. The callback function is called when the action is successfully completed, passing the server message as a parameter. On failure, the errfn function is called, passing the error message as a parameter.
   *text* - The SPARQL Update command.
@@ -46,20 +46,20 @@ The following methods are available on the connection:
   *errfn* - The function that will be called if there is an error completing the operation. Optional.
 
 
-** getGraphs(callback)**
+**getGraphs(callback)**
 
   Retrieves all the graphs in the store. Returns a "promise" of a value, this can be checked for a value with the methods getStatus (if true, then the data is now ready), and getValue (when the status is true, then this will return an array of graphs). The method is intended to be used with a callback that will used to return the result.
   *callback* - A function that will be called when the results are ready. An array of graphs is passed as the only parameter to the callback. Optional.
 
 
-** isGraph(name, callback)**
+**isGraph(name, callback)**
 
   Tests if a graph exists. The callback is called with a value of either true or false. May use a callback, but also returns a promise.
   *name* - The graph to test the existence of.
   *callback* - Passed the boolean result of the test once a result is known. Optional.
 
 
-** removeGraph(name, callback, errfn)**
+**removeGraph(name, callback, errfn)**
 
   Removes a graph from the store.
   *name* - The graph to be removed.
@@ -67,7 +67,7 @@ The following methods are available on the connection:
   *errfn* - Called when the server returns an error. The error message is given as a parameter. Optional.
 
 
-** addGraph(name, callback, errfn)**
+**addGraph(name, callback, errfn)**
 
   Adds a graph to the store.
   *name* - The graph to be added.
@@ -75,7 +75,7 @@ The following methods are available on the connection:
   *errfn* - Called when the server returns an error. The error message is given as a parameter. Optional.
 
 
-** moveGraph(src, dest, callback, errfn)**
+**moveGraph(src, dest, callback, errfn)**
 
   Moves all data from one graph to another.
   *src* - The graph containing the initial data. This graph will be removed.
@@ -84,7 +84,7 @@ The following methods are available on the connection:
   *errfn* - Called when the server returns an error. The error message is given as a parameter. Optional.
 
 
-** copyGraph(src, dest, callback, errf)**
+**copyGraph(src, dest, callback, errf)**
 
   Copies data from one graph to another.
   *src* - The graph containing the initial data. This graph will be unaffected.
