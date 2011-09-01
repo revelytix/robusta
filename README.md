@@ -25,7 +25,7 @@ Performs a SPARQL query using the connection. The callback function is used when
 +  *graphs* - An array of graph URIs to be applied to the query. These are ignored by Fuseki. Optional.
 +  *namedgraphs* - An array of named graph URIs to be applied to the query. These are ignored by Fuseki. Optional.
 +  *errfn* - A function that is called in case of an error. The error message is passed to this function. Optional.
-+  *complete* - A function that is called at the conclusion of the query, regardless of the outcome. No parameters are provided to this function. Optional.
++  *complete* - A function that is called at the conclusion of the query, regardless of the outcome. No parameters are provided to this function. Optional.  
 
 
 **queryJSON(text, callback, [graphs], [namedgraphs], [errfn], [completedfn])**
@@ -37,7 +37,7 @@ Identical method to query, however the callback function receives a JavaScript o
 +  *graphs* - An array of graph URIs to be applied to the query. These are ignored by Fuseki. Optional.
 +  *namedgraphs* - An array of named graph URIs to be applied to the query. These are ignored by Fuseki. Optional.
 +  *errfn* - A function that is called in case of an error. The error message is passed to this function. Optional.
-+  *complete* - A function that is called at the conclusion of the query, regardless of the outcome. No parameters are provided to this function. Optional.
++  *complete* - A function that is called at the conclusion of the query, regardless of the outcome. No parameters are provided to this function. Optional.  
 
 
 **action(text, callback, errfn)**
@@ -46,14 +46,14 @@ Performs a SPARQL Update action using the connection. The callback function is c
 
 +  *text* - The SPARQL Update command.
 +  *callback* - The function that will be called on successful completion of the operation. Optional.
-+  *errfn* - The function that will be called if there is an error completing the operation. Optional.
++  *errfn* - The function that will be called if there is an error completing the operation. Optional.  
 
 
 **getGraphs(callback)**
 
 Retrieves all the graphs in the store. Returns a "promise" of a value, this can be checked for a value with the methods getStatus (if true, then the data is now ready), and getValue (when the status is true, then this will return an array of graphs). The method is intended to be used with a callback that will used to return the result.
 
-+  *callback* - A function that will be called when the results are ready. An array of graphs is passed as the only parameter to the callback. Optional.
++  *callback* - A function that will be called when the results are ready. An array of graphs is passed as the only parameter to the callback. Optional.  
 
 
 **isGraph(name, callback)**
@@ -61,7 +61,7 @@ Retrieves all the graphs in the store. Returns a "promise" of a value, this can 
 Tests if a graph exists. The callback is called with a value of either true or false. May use a callback, but also returns a promise.
 
 +  *name* - The graph to test the existence of.
-+  *callback* - Passed the boolean result of the test once a result is known. Optional.
++  *callback* - Passed the boolean result of the test once a result is known. Optional.  
 
 
 **removeGraph(name, callback, errfn)**
@@ -70,7 +70,7 @@ Removes a graph from the store.
 
 +  *name* - The graph to be removed.
 +  *callback* - Called on successful completion, passing the results returned from the server. Optional.
-+  *errfn* - Called when the server returns an error. The error message is given as a parameter. Optional.
++  *errfn* - Called when the server returns an error. The error message is given as a parameter. Optional.  
 
 
 **addGraph(name, callback, errfn)**
@@ -79,7 +79,7 @@ Adds a graph to the store.
 
 +  *name* - The graph to be added.
 +  *callback* - Called on successful completion, passing the results returned from the server. Optional.
-+  *errfn* - Called when the server returns an error. The error message is given as a parameter. Optional.
++  *errfn* - Called when the server returns an error. The error message is given as a parameter. Optional.  
 
 
 **moveGraph(src, dest, callback, errfn)**
@@ -89,7 +89,7 @@ Moves all data from one graph to another.
 +  *src* - The graph containing the initial data. This graph will be removed.
 +  *dest* - The graph to receive the data. This need not exist as it will be created.
 +  *callback* - Called on successful completion, passing the results returned from the server. Optional.
-+  *errfn* - Called when the server returns an error. The error message is given as a parameter. Optional.
++  *errfn* - Called when the server returns an error. The error message is given as a parameter. Optional.  
 
 
 **copyGraph(src, dest, callback, errf)**
@@ -99,5 +99,5 @@ Copies data from one graph to another.
 +  *src* - The graph containing the initial data. This graph will be unaffected.
 +  *dest* - The graph to receive the data. This need not exist as it will be created.
 +  *callback* - Called on successful completion, passing the results returned from the server. Optional.
-+  *errfn* - Called when the server returns an error. The error message is given as a parameter. Optional.
++  *errfn* - Called when the server returns an error. The error message is given as a parameter. Optional.  
 
