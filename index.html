@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Robusta</title>
+<link href="robusta.css" rel="stylesheet" type="text/css" />
+<!--[if IE]>
+<style type="text/css"> 
+/* place css fixes for all versions of IE in this conditional comment */
+.twoColHybLtHdr #sidebar1 { padding-top: 30px; }
+.twoColHybLtHdr #mainContent { zoom: 1; padding-top: 15px; }
+/* the above proprietary zoom property gives IE the hasLayout it may need to avoid several bugs */
+</style>
+<![endif]-->
+<script type="text/javascript" src="sparql.js"></script>
+<script type="text/javascript" src="tableresult.js"></script>
+<script type="text/javascript" src="config.js"></script>
+<script language="javascript">
+var fullparse_uri = /^(?:[A-Za-z]+:\/\/)?(?:[0-9.\-A-Za-z]+)(?::\d+)?(?:\/[^?#\s]*)?(?:\?[^#]*)?(?:#.*)?$/;
+var parse_url = /^([A-Za-z]+:\/\/)?([0-9.\-A-Za-z]+)(?::\d+)?(?:\/[^?#\s]*)?$/;
+var currentResults;
+
+window.onload = function() {
+  if (window.localStorage) {
+    if (localStorage.jena) {
+      document.endpoint_f.jena.checked = localStorage.jena === "true";
+      jenaSet();
+    }
+    if (localStorage.jdata) document.endpoint_f.jdata.value = localStorage.jdata;
+    if (localStorage.qendpoint) document.endpoint_f.qendpoint.value = localStorage.qendpoint;
+    if (localStorage.uendpoint) document.endpoint_f.uendpoint.value = localStorage.uendpoint;
+    if (localStorage.dendpoint) document.endpoint_f.dendpoint.value = localStorage.dendpoint;
+    if (localStorage.sparqlText) document.sparql_f.sparqlText.value = localStorage.sparqlText;
+    updateGraphs();
+  }
+};
+function save() {
+  if (window.localStorage) {
+    localStorage.jena = document.endpoint_f.jena.checked ? "true" : "false";
+    localStorage.jdata = document.endpoint_f.jdata.value;
+    localStorage.qendpoint = document.endpoint_f.qendpoint.value;
+    localStorage.uendpoint = document.endpoint_f.uendpoint.value;
+    localStorage.dendpoint = document.endpoint_f.dendpoint.value;
+    localStorage.sparqlText = document.sparql_f.sparqlText.value;
+  }
+};
+function updateAndSave() {
+  updateGraphs();
+  save();
+};
+function getSelected(sel) {
+  var options = sel.options;
+  var opts = [];
+  var s;
+  for (s = 0; s < options.length; s++) {
+    if (options[s].selected) opts.push(options[s].text);
+  }
+  return opts;
+};
+function sparqlUpdate(text, complete, err) {
+  var url = document.endpoint_f.uendpoint.value;
+  var connection, completeFn;
+  if (parse_url.test(url)) {
+    connection = sparqlConnection(url);
+    if (!complete) {
+      completeFn = function() { updateGraphs(); };
+    } else {
+      completeFn = function() { complete(); updateGraphs(); };
+    }
+    if (!err) err = function(text) { alert("Error: " + text); };
+    connection.action(text, completeFn, err);
+  } else {
+    alert("Unable to use endpoint URL: " + url);
+  }
+};
+function sparqlQuery(text, complete, err) {
+  var url = document.endpoint_f.qendpoint.value;
+  var connection, completeFn;
+  if (parse_url.test(url)) {
+    connection = sparqlConnection(url);
+    if (!complete) complete = function() {};
+    if (!err) err = function(text) { alert("Error: " + text); };
+    connection.query(text, complete, null, null, err);
+  } else {
+    alert("Unable to use endpoint URL: " + url);
+  }
+};
+// fn takes params of (connection, src, dest, successFn, errFn)
+function graphOp(src, dest, fn, errMessage) {
+  var url = document.endpoint_f.uendpoint.value;
+  var connection;
+  if (parse_url.test(url)) {
+    connection = sparqlConnection(url);
+    fn(connection, src, dest, function() {
+        updateGraphs();
+      },
+      function() {
+        alert(errMessage);
+    });
+  } else {
+    alert("Invalid endpoint URL");
+  }
+};
+function renameGraph(src, dest) {
+  graphOp(src, dest, function(c, s, d, sf, ef) { c.moveGraph(s, d, sf, ef); }, "Unable to move: " + src);
+};
+function addGraph(src, dest) {
+  graphOp(src, dest, function(c, s, d, sf, ef) { c.addGraph(s, d, sf, ef); }, "Unable to add " + src + " into " + dest);
+};
+function copyGraph(src, dest) {
+  graphOp(src, dest, function(c, s, d, sf, ef) { c.copyGraph(s, d, sf, ef); }, "Unable to copy " + src + " over " + dest);
+};
+function setStatus(text) {
+  var resultTable = document.getElementById("resultTable");
+  while (resultTable.childNodes.length > 0) {
+    resultTable.removeChild(resultTable.childNodes[0]);
+  }
+  document.getElementById("updateStatus").textContent = text;
+};
+function fileAccess() {
+  return window.location.protocol === "file:";
+};
+function booleanResult(ans) {
+  var b = ans.getElementsByTagName("boolean");
+  if (b.length === 0) return undefined;
+  return b[0].firstChild.nodeValue === "true";
+};
+function openResults(ans) {
+  var b = booleanResult(ans);
+  if (b !== undefined) {
+    setStatus(b.toString());
+  } else {
+    if (fileAccess()) {
+      tableResult(document, document.getElementById("resultTable"), ans);
+    } else {
+      currentResults = ans;
+      open("results.html", "", "scrollbars");
+    }
+  }
+};
+function jenaSet() {
+  var jena = document.endpoint_f.jena.checked;
+  document.endpoint_f.jdata.disabled = !jena;
+  document.endpoint_f.jdefault.disabled = !jena;
+  document.endpoint_f.qendpoint.disabled = jena;
+  document.endpoint_f.uendpoint.disabled = jena;
+  document.endpoint_f.dendpoint.disabled = jena;
+};
+function jenaSetAndSave() {
+  jenaSet();
+  save();
+};
+function updateGraphs() {
+  var url = document.endpoint_f.qendpoint.value;
+  if (parse_url.test(url)) {
+    var reader = sparqlConnection(url);
+    reader.getGraphs(function(g) {
+      var s;
+      var options = document.graph_f.graphs.options;
+      while (options.length > 1) options.remove(1);
+      for (s = 0; s < g.length; s++) {
+        var opt = document.createElement("option");
+        opt.text = g[s];
+        options.add(opt);
+      }
+    });
+  }
+};
+function setJenaDefault() {
+  var def = "http://" + defaultHost + ":" + defaultPort + "/" + jenaDataset;
+  document.endpoint_f.jdata.value = def;
+  jenaUrl(def);
+};
+function jenaUrl(url) {
+  var details;
+  if ((details = parse_url.exec(url))) {
+    if (!details[1]) {
+      url = "http://" + url;
+      document.endpoint_f.jdata.value = url;
+    }
+    if (url.slice(-1) === '/') url = url.slice(0, -1);
+    document.endpoint_f.qendpoint.value = url + "/query";
+    document.endpoint_f.uendpoint.value = url + "/update";
+    document.endpoint_f.dendpoint.value = url + "/data";
+  }
+  updateGraphs();
+  save();
+};
+function submitLoad() {
+  var data_ep = document.endpoint_f.jdata.value;
+  if (document.endpoint_f.jena.checked && !fullparse_uri.test(document.load_f.graph.value)) {
+    alert("Jena requires a valid IRI for a graph name");
+  } else if (!document.load_f.file.value) {
+    alert("A file must be specified to load");
+  } else {
+    if (parse_url.test(data_ep)) {
+      if (data_ep.slice(-1) === "/") data_ep = data_ep.slice(0, -1);
+      data_ep += "/upload";
+      document.load_f.action = data_ep;
+      document.load_f.submit();
+    }
+  }
+};
+function dropGraphs() {
+  var options = document.graph_f.graphs.options;
+  var connection;
+  var graphs = [];
+  var s;
+  var url = document.endpoint_f.uendpoint.value;
+  if (parse_url.test(url)) {
+    connection = sparqlConnection(url);
+    for (s = 0; s < options.length; s++) {
+      if (options[s].selected) graphs.push(options[s].text);
+    }
+    if (confirm("Remove: " + graphs.join(", "))) {
+      for (s = 0; s < graphs.length; s++) {
+        if (graphs[s] === "<default>") {
+          connection.removeGraph();
+        } else {
+          connection.removeGraph(graphs[s]);
+        }
+      }
+    }
+    updateGraphs();
+  }
+};
+function createGraph() {
+  var name, connection, graphs;
+  var url = document.endpoint_f.uendpoint.value;
+  var q_url = document.endpoint_f.qendpoint.value;
+  if (parse_url.test(url)) {
+    name = prompt("New graph name");
+    connection = sparqlConnection(url);
+    connection.addGraph(name,
+      function() {  // handle result
+        var reader = sparqlConnection(q_url);
+        reader.isGraph(name, function(b) {
+            if (b) {
+              alert("Created graph: " + name);
+            } else {
+              alert("Empty graph creation not supported");
+            }
+        });
+      },
+      function() {  // handle error
+        alert("Error creating graph: " + name);
+      }
+    );
+  }
+};
+function moveGraph() {
+  var graphs = getSelected(document.graph_f.graphs);
+  var newName, connection;
+  if (graphs.length != 1) {
+    alert("Select a graph to be moved");
+  } else {
+    newName = prompt("Enter the new name for: " + graphs[0]);
+    renameGraph(graphs[0], newName);
+  }
+};
+function multiOp(op) {
+  var graphs = getSelected(document.graph_f.graphs);
+  var dest = prompt("Enter the destination graph");
+  for (g = 0; g < graphs.length; g++) {
+    op(graphs[g], dest);
+  }
+};
+function update() {
+  sparqlUpdate(
+    document.sparql_f.sparqlText.value,
+    function() {
+      setStatus("success");
+    },
+    function(text) {
+      setStatus("");
+      alert("Error in update: " + text);
+    });
+};
+function query() {
+  sparqlQuery(
+    document.sparql_f.sparqlText.value,
+    openResults,
+    function(text) {
+      setStatus("");
+      alert("Error from query: " + text);
+    });
+};
+</script>
+</head>
+
+<body class="twoColHybLtHdr">
+
+<div id="container">
+  <div id="header">
+    <h1>SPARQL</h1>
+    <form id="endpoint_f" name="endpoint_f" method="post" action="">
+      <table width="780">
+        <tbody>
+          <tr>
+            <td width="153">Query Endpoint:</td>
+            <td width="330"><input type="text" name="qendpoint" id="qendpoint" tabindex="1" size="40" disabled="true" onChange="updateAndSave();"/></td>
+            <td width="130" align="right">Jena:<input name="jena" type="checkbox" value="Jena" checked="true" tabindex="4" onClick="jenaSetAndSave()"/></td>
+            <td width="378"></td>
+          </tr>
+          <tr>
+            <td>Update Endpoint:</td>
+            <td><input type="text" name="uendpoint" id="uendpoint" tabindex="2" size="40" disabled="true" /> </td>
+            <td align="right">Dataset URL:</td>
+            <td><input type="text" name="jdata" id="jdata" tabindex="5" size="40" onChange="jenaUrl(this.value)"/>
+              <input type="button" name="jdefault" id="jdefault" value="Default" tabindex="6" onClick="setJenaDefault()"/></td>
+          </tr>
+          <tr>
+            <td>Data Endpoint:</td>
+            <td><input type="text" name="dendpoint" id="dendpoint" tabindex="3" size="40" disabled="true" onClick="save()"/> </td>
+            <td></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </form>
+  <!-- end #header --></div>
+  <div id="sidebar1">
+    <h3>Graphs</h3>
+    <form id="graph_f" name="graph_f" method="post" action="">
+      <select name="graphs" size="15" multiple="multiple" id="graphs" tabindex="7" >
+        <option>&lt;default&gt;</option>
+      </select>
+    </form>
+    <table>
+      <tbody>
+        <tr>
+          <td><input type="button" name="drop" id="drop" tabindex="8" value="Drop" onClick="dropGraphs()"/></td>
+          <td><input type="button" name="move" id="move" tabindex="9" value="Rename" onClick="moveGraph()"/></td>
+        </tr>
+        <tr>
+          <td><input type="button" name="add" id="add" tabindex="10" value="Add To" onClick="multiOp(addGraph)"/></td>
+          <td><input type="button" name="copy" id="copy" tabindex="11" value="Copy Over" onClick="multiOp(copyGraph)"/></td>
+        </tr>
+        <tr>
+          <td><input type="button" name="create" id="create" value="Create" tabindex="12" onClick="createGraph()"/></td>
+          <td><input type="button" name="refresh" id="refresh" value="Refresh" tabindex="13" onClick="updateGraphs()"/></td>
+        </tr>
+      </tbody>
+    </table>
+    <!-- end #sidebar1 --></div>
+  <div id="mainContent">
+    <form id="load_f" name="load_f" method="post" action="" enctype="multipart/form-data">
+      Graph: <input name="graph" type="text" size="20" tabindex="14" />
+      <input name="file" type="file" size="30" tabindex="15" />
+      <input type="button" name="load" id="load" value="Load" tabindex="16" onClick="submitLoad()"/>
+    </form>
+    <hr/>
+    <form id="sparql_f" name="sparql_f" method="post" action="">
+      SPARQL:<br/>
+      <textarea name="sparqlText" cols="80" rows="20" tabindex="19"></textarea><br/>
+      <table>
+        <tbody>
+          <tr>
+            <td><input name="updateBtn" type="button" value="Update" tabindex="20" onClick="update()" /></td>
+            <td><input name="queryBtn" type="button" value="Query" tabindex="18" onClick="query()" /></td>
+            <td class="leftSpace"><span id="updateStatus"></span></td>
+          </tr>
+        </tbody>
+      </table>
+    </form>
+    <!-- end #mainContent --></div>
+	<!-- This clearing element should immediately follow the #mainContent div in order to force the #container div to contain all child floats -->
+	<br class="clearfloat" />
+	<div id="footer">
+    <table>
+      <tbody id="resultTable">
+      </tbody>
+    </table>
+    <!-- end #footer --></div>
+<!-- end #container --></div>
+</body>
+</html>

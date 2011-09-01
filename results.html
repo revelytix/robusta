@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<script type="text/javascript" src="tableresult.js"></script>
+<style>
+body {
+  font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+  font-size: 12px;
+}
+table { border-collapse: collapse; }
+th, td {
+  border: 1px solid black;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+</style>
+<title>Results</title>
+</head>
+<body>
+<script type="text/javascript">
+  var styleDiv = document.createElement("div");
+  styleDiv.setAttribute("id", "results");
+  document.body.appendChild(styleDiv);
+  var table = document.createElement("table");
+  styleDiv.appendChild(table);
+  var tbody = document.createElement("tbody");
+  table.appendChild(tbody);
+  tableResult(document, tbody, opener.currentResults);
+</script>
+</body>
+</html> 
