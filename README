@@ -71,7 +71,7 @@ The following methods are available on the connection:
 
 * copyGraph(src, dest, callback, errf)
 
-  Copoes data from one graph to another.
+  Copies data from one graph to another.
   src - The graph containing the initial data. This graph will be unaffected.
   dest - The graph to receive the data. This need not exist as it will be created.
   callback - Called on successful completion, passing the results returned from the server. Optional.
