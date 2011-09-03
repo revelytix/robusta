@@ -9,7 +9,7 @@ body  {
 	color: #000000;
 }
 .twoColHybLtHdr #container { 
-	width: 80%;  /* this will create a container 80% of the browser width */
+	width: 90%;  /* this will create a container 80% of the browser width */
 	background: #FFFFFF;
 	margin: 0 auto; /* the auto margins (in conjunction with a width) center the page */
 	border: 1px solid #000000;
@@ -30,9 +30,14 @@ body  {
 	background: #EBEBEB; /* the background color will be displayed for the length of the content in the column, but no further */
 	padding: 15px 0; /* top and bottom padding create visual space within this div  */
 }
-.twoColHybLtHdr #sidebar1 h3, .twoColHybLtHdr #sidebar1 p {
-	margin-left: 10px; /* the left and right margin should be given to every element that will be placed in the side columns */
+.twoColHybLtHdr #sidebar1 h3{
+	margin-left: 10px;
 	margin-right: 10px;
+}
+.twoColHybLtHdr #sidebar1 p {
+	margin-left: 10px;
+	margin-right: 10px;
+  font-size: 14px;
 }
 
 .twoColHybLtHdr #mainContent { 
