@@ -8,6 +8,8 @@ Version 0.1 has only been tested on Jena/Fuseki.
 
 To run Robusta, open the index.html file. Query results are placed in a new window if the file is served from a web server, and will be placed at the bottom of the window if opened directly on a file system (the separate window is prefered, but the difference is due to security restrictions in HTML/JavaScript).
 
+NOTE: This application is **not safe** to be placed in a publically accessible area. It allows users to send SPARQL queries to arbitrary endpoints and can be used to stage an attack on a third party's site.
+
 ## sparql.js
 
 The sparql.js file is specifically meant to be a standalone utility. To use, create a connection object with:
@@ -49,11 +51,12 @@ Performs a SPARQL Update action using the connection. The callback function is c
 +  *errfn* - The function that will be called if there is an error completing the operation. Optional.  
 
 
-**getGraphs(callback)**
+**getGraphs(callback, errfn)**
 
 Retrieves all the graphs in the store. Returns a "promise" of a value, this can be checked for a value with the methods getStatus (if true, then the data is now ready), and getValue (when the status is true, then this will return an array of graphs). The method is intended to be used with a callback that will used to return the result.
 
 +  *callback* - A function that will be called when the results are ready. An array of graphs is passed as the only parameter to the callback. Optional.  
++  *errfn* - Called when the server returns an error. The error message is given as a parameter. Optional.  
 
 
 **isGraph(name, callback)**
