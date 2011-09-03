@@ -186,9 +186,10 @@ var sparqlConnection = function (endpoint) {
       this.query(text, function(xml){ success(sparqlXMLtoJSON(xml)) }, graphs, namedgraphs, errfn, complete);
     },
 
-    getGraphs: function (notifier) {
+    getGraphs: function (notifier, errfn) {
       var result = newPromise();
       if (notifier) result.setChangedFn(notifier);
+      if (!errfn) errfn = function(){};
       this.query("SELECT DISTINCT ?g {GRAPH ?g {?s ?p ?o}}", function(ans){
         var graphs = new Array();
         var results = ans.getElementsByTagName("results");
@@ -203,7 +204,7 @@ var sparqlConnection = function (endpoint) {
           }
         }
         result.setValue(graphs);
-      });
+      }, null, null, errfn);
       return result.getReadOnly();
     },
 

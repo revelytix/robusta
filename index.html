@@ -16,6 +16,7 @@
 <script type="text/javascript" src="tableresult.js"></script>
 <script type="text/javascript" src="config.js"></script>
 <script language="javascript">
+//<![CDATA[
 var fullparse_uri = /^(?:[A-Za-z]+:\/\/)?(?:[0-9.\-A-Za-z]+)(?::\d+)?(?:\/[^?#\s]*)?(?:\?[^#]*)?(?:#.*)?$/;
 var parse_url = /^([A-Za-z]+:\/\/)?([0-9.\-A-Za-z]+)(?::\d+)?(?:\/[^?#\s]*)?$/;
 var currentResults;
@@ -126,6 +127,10 @@ function booleanResult(ans) {
   return b[0].firstChild.nodeValue === "true";
 };
 function openResults(ans) {
+  if (!ans) {
+    alert("No results to be displayed");
+    return;
+  }
   var b = booleanResult(ans);
   if (b !== undefined) {
     setStatus(b.toString());
@@ -152,12 +157,13 @@ function jenaSetAndSave() {
 };
 function updateGraphs() {
   var url = document.endpoint_f.qendpoint.value;
+  var options = document.graph_f.graphs.options;
+  while (options.length > 1) options.remove(1);
+  graphSelected();
   if (parse_url.test(url)) {
     var reader = sparqlConnection(url);
     reader.getGraphs(function(g) {
       var s;
-      var options = document.graph_f.graphs.options;
-      while (options.length > 1) options.remove(1);
       for (s = 0; s < g.length; s++) {
         var opt = document.createElement("option");
         opt.text = g[s];
@@ -275,6 +281,7 @@ function update() {
       setStatus("");
       alert("Error in update: " + text);
     });
+  save();
 };
 function query() {
   sparqlQuery(
@@ -284,7 +291,44 @@ function query() {
       setStatus("");
       alert("Error from query: " + text);
     });
+  save();
 };
+function showGraph() {
+  var graphs = getSelected(document.graph_f.graphs);
+  var q = "select ?subject ?predicate ?object {";
+  var graphBlocks = [];
+  var i;
+  if (graphs.length === 0) return;
+  for (i = 0; i < graphs.length; i++) {
+    if (graphs[i] === "<default>") {
+      graphBlocks.push("?subject ?predicate ?object");
+    } else {
+      graphBlocks.push("graph <" + graphs[i] + "> {?subject ?predicate ?object}");
+    }
+  }
+  if (graphBlocks.length === 1) {
+    q += graphBlocks[0] + "}";
+  } else {
+    q += "{" + graphBlocks.join("} UNION {") + "}}";
+  }
+  sparqlQuery(
+    q,
+    openResults,
+    function(text) {
+      setStatus("");
+      alert("Error from query: " + text);
+    });
+};
+function graphSelected() {
+  var graphs = getSelected(document.graph_f.graphs);
+  var disabledState = (graphs.length === 0);
+  document.graph_f.drop.disabled = disabledState;
+  document.graph_f.move.disabled = disabledState;
+  document.graph_f.add.disabled = disabledState;
+  document.graph_f.copy.disabled = disabledState;
+  document.graph_f.show.disabled = disabledState;
+};
+//]]>
 </script>
 </head>
 
@@ -298,20 +342,20 @@ function query() {
         <tbody>
           <tr>
             <td width="153">Query Endpoint:</td>
-            <td width="330"><input type="text" name="qendpoint" id="qendpoint" tabindex="1" size="40" disabled="true" onChange="updateAndSave();"/></td>
-            <td width="130" align="right">Jena:<input name="jena" type="checkbox" value="Jena" checked="true" tabindex="4" onClick="jenaSetAndSave()"/></td>
+            <td width="330"><input type="text" name="qendpoint" id="qendpoint" tabindex="1" size="40" disabled="true" onchange="updateAndSave();"/></td>
+            <td width="130" align="right">Jena:<input name="jena" type="checkbox" value="Jena" checked="true" tabindex="4" onclick="jenaSetAndSave()"/></td>
             <td width="378"></td>
           </tr>
           <tr>
             <td>Update Endpoint:</td>
-            <td><input type="text" name="uendpoint" id="uendpoint" tabindex="2" size="40" disabled="true" /> </td>
+            <td><input type="text" name="uendpoint" id="uendpoint" tabindex="2" size="40" disabled="true" onchange="save()"/> </td>
             <td align="right">Dataset URL:</td>
-            <td><input type="text" name="jdata" id="jdata" tabindex="5" size="40" onChange="jenaUrl(this.value)"/>
-              <input type="button" name="jdefault" id="jdefault" value="Default" tabindex="6" onClick="setJenaDefault()"/></td>
+            <td><input type="text" name="jdata" id="jdata" tabindex="5" size="40" onchange="jenaUrl(this.value)"/>
+              <input type="button" name="jdefault" id="jdefault" value="Default" tabindex="6" onclick="setJenaDefault()"/></td>
           </tr>
           <tr>
             <td>Data Endpoint:</td>
-            <td><input type="text" name="dendpoint" id="dendpoint" tabindex="3" size="40" disabled="true" onClick="save()"/> </td>
+            <td><input type="text" name="dendpoint" id="dendpoint" tabindex="3" size="40" disabled="true" onchange="save()"/> </td>
             <td></td>
             <td></td>
           </tr>
@@ -320,44 +364,45 @@ function query() {
     </form>
   <!-- end #header --></div>
   <div id="sidebar1">
-    <h3>Graphs</h3>
     <form id="graph_f" name="graph_f" method="post" action="">
-      <select name="graphs" size="15" multiple="multiple" id="graphs" tabindex="7" >
+      <p><strong>Graphs</strong>&nbsp;
+         <input type="button" name="refresh" id="refresh" tabindex="8" value="Refresh" onclick="updateGraphs()"/></p>
+      <select name="graphs" size="15" multiple="multiple" id="graphs" tabindex="7" onchange="graphSelected()">
         <option>&lt;default&gt;</option>
       </select>
+      <table>
+        <tbody>
+          <tr>
+            <td><input type="button" name="drop" id="drop" tabindex="9" value="Drop" disabled="true" onclick="dropGraphs()"/></td>
+            <td><input type="button" name="move" id="move" tabindex="10" value="Rename" disabled="true" onclick="moveGraph()"/></td>
+          </tr>
+          <tr>
+            <td><input type="button" name="add" id="add" tabindex="11" value="Add To" disabled="true" onclick="multiOp(addGraph)"/></td>
+            <td><input type="button" name="copy" id="copy" tabindex="12" value="Copy Over" disabled="true" onclick="multiOp(copyGraph)"/></td>
+          </tr>
+          <tr>
+            <td><input type="button" name="create" id="create" value="Create" tabindex="13" onclick="createGraph()"/></td>
+            <td><input type="button" name="show" id="show" value="Show" tabindex="14" disabled="true" onclick="showGraph()"/></td>
+          </tr>
+        </tbody>
+      </table>
     </form>
-    <table>
-      <tbody>
-        <tr>
-          <td><input type="button" name="drop" id="drop" tabindex="8" value="Drop" onClick="dropGraphs()"/></td>
-          <td><input type="button" name="move" id="move" tabindex="9" value="Rename" onClick="moveGraph()"/></td>
-        </tr>
-        <tr>
-          <td><input type="button" name="add" id="add" tabindex="10" value="Add To" onClick="multiOp(addGraph)"/></td>
-          <td><input type="button" name="copy" id="copy" tabindex="11" value="Copy Over" onClick="multiOp(copyGraph)"/></td>
-        </tr>
-        <tr>
-          <td><input type="button" name="create" id="create" value="Create" tabindex="12" onClick="createGraph()"/></td>
-          <td><input type="button" name="refresh" id="refresh" value="Refresh" tabindex="13" onClick="updateGraphs()"/></td>
-        </tr>
-      </tbody>
-    </table>
     <!-- end #sidebar1 --></div>
   <div id="mainContent">
     <form id="load_f" name="load_f" method="post" action="" enctype="multipart/form-data">
-      Graph: <input name="graph" type="text" size="20" tabindex="14" />
-      <input name="file" type="file" size="30" tabindex="15" />
-      <input type="button" name="load" id="load" value="Load" tabindex="16" onClick="submitLoad()"/>
+      Graph: <input name="graph" type="text" size="20" tabindex="15" />
+      <input name="file" type="file" size="30" tabindex="16" />
+      <input type="button" name="load" id="load" value="Load" tabindex="17" onclick="submitLoad()"/>
     </form>
     <hr/>
     <form id="sparql_f" name="sparql_f" method="post" action="">
       SPARQL:<br/>
-      <textarea name="sparqlText" cols="80" rows="20" tabindex="19"></textarea><br/>
+      <textarea name="sparqlText" cols="80" rows="20" tabindex="18"></textarea><br/>
       <table>
         <tbody>
           <tr>
-            <td><input name="updateBtn" type="button" value="Update" tabindex="20" onClick="update()" /></td>
-            <td><input name="queryBtn" type="button" value="Query" tabindex="18" onClick="query()" /></td>
+            <td><input name="updateBtn" type="button" value="Update" tabindex="19" onclick="update()" /></td>
+            <td><input name="queryBtn" type="button" value="Query" tabindex="20" onclick="query()" /></td>
             <td class="leftSpace"><span id="updateStatus"></span></td>
           </tr>
         </tbody>
