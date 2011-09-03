@@ -1,5 +1,7 @@
 # Robusta
 
+<img src="https://github.com/downloads/revelytix/robusta/robusta.jpeg" alt="Robusta Beans" align="right" />
+
 Robusta is a simple UI tool for accessing a SPARQL 1.1 endpoint.
 
 Version 0.1 has only been tested on Jena/Fuseki.
